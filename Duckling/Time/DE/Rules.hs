@@ -180,12 +180,60 @@ ruleDatetimeDatetimeInterval = Rule
   { name = "<datetime> - <datetime> (interval)"
   , pattern =
     [ Predicate isNotLatent
-    , regex "\\-|bis"
+    , regex "\\-|bis( zum)?|auf( den)?"
     , Predicate isNotLatent
     ]
   , prod = \tokens -> case tokens of
       (Token Time td1:_:Token Time td2:_) ->
         Token Time <$> interval TTime.Closed td1 td2
+      _ -> Nothing
+  }
+
+ruleDateDateInterval :: Rule
+ruleDateDateInterval = Rule
+  { name = "dd.(mm.)? - dd.mm.(yy[yy]?)? (interval)"
+  , pattern =
+    [ regex "(?:vo[nm]\\s+)?(10|20|30|31|[012]?[1-9])\\.?((?<=\\.)(?:10|11|12|0?[1-9])(?:\\.?))?"
+    , regex "\\-|/|bis( zum)?|auf( den)?"
+    , regex "(10|20|30|31|[012]?[1-9])\\.(10|11|12|0?[1-9])\\.?((?<=\\.)\\d{2,4})?"
+    ]
+  , prod = \tokens -> case tokens of
+      (Token RegexMatch (GroupMatch (d1:"":_)):
+       _:
+       Token RegexMatch (GroupMatch (d2:m2:"":_)):
+       _) -> do
+          d1 <- parseInt d1
+          d2 <- parseInt d2
+          m2 <- parseInt m2
+          Token Time <$> interval TTime.Closed (monthDay m2 d1) (monthDay m2 d2)
+      (Token RegexMatch (GroupMatch (d1:"":_)):
+       _:
+       Token RegexMatch (GroupMatch (d2:m2:y:_)):
+       _) -> do
+          d1 <- parseInt d1
+          d2 <- parseInt d2
+          m2 <- parseInt m2
+          y <- parseInt y
+          Token Time <$> interval TTime.Closed (yearMonthDay y m2 d1) (yearMonthDay y m2 d2)
+      (Token RegexMatch (GroupMatch (d1:m1:_)):
+       _:
+       Token RegexMatch (GroupMatch (d2:m2:"":_)):
+       _) -> do
+          d1 <- parseInt d1
+          d2 <- parseInt d2
+          m1 <- parseInt m1
+          m2 <- parseInt m2
+          Token Time <$> interval TTime.Closed (monthDay m1 d1) (monthDay m2 d2)
+      (Token RegexMatch (GroupMatch (d1:m1:_)):
+       _:
+       Token RegexMatch (GroupMatch (d2:m2:y:_)):
+       _) -> do
+          d1 <- parseInt d1
+          d2 <- parseInt d2
+          m1 <- parseInt m1
+          m2 <- parseInt m2
+          y <- parseInt y
+          Token Time <$> interval TTime.Closed (yearMonthDay y m1 d1) (yearMonthDay y m2 d2)
       _ -> Nothing
   }
 
@@ -268,7 +316,7 @@ ruleFromDatetimeDatetimeInterval = Rule
   , pattern =
     [ regex "vo[nm]"
     , dimension Time
-    , regex "\\-|bis"
+    , regex "\\-|bis( zum)?|auf( den)?"
     , dimension Time
     ]
   , prod = \tokens -> case tokens of
@@ -328,7 +376,7 @@ ruleMonthDdddInterval = Rule
   { name = "<month> dd-dd (interval)"
   , pattern =
     [ regex "([012]?\\d|30|31)(ter|\\.)?"
-    , regex "\\-|bis"
+    , regex "\\-|bis( zum)?|auf( den)?"
     , regex "([012]?\\d|30|31)(ter|\\.)?"
     , Predicate isAMonth
     ]
@@ -723,7 +771,7 @@ ruleIntersectBy = Rule
   { name = "intersect by ','"
   , pattern =
     [ Predicate isNotLatent
-    , regex ","
+    , regex ",( den|r)?"
     , Predicate isNotLatent
     ]
   , prod = \tokens -> case tokens of
@@ -754,7 +802,7 @@ ruleMmdd :: Rule
 ruleMmdd = Rule
   { name = "mm/dd"
   , pattern =
-    [ regex "([012]?[1-9]|10|20|30|31)\\.(0?[1-9]|10|11|12)\\."
+    [ regex "(?:am\\s+)?([012]?[1-9]|10|20|30|31)\\.(10|11|12|0?[1-9])\\.?"
     ]
   , prod = \tokens -> case tokens of
       (Token RegexMatch (GroupMatch (m1:m2:_)):_) -> do
@@ -1017,7 +1065,7 @@ ruleAboutTimeofday :: Rule
 ruleAboutTimeofday = Rule
   { name = "about <time-of-day>"
   , pattern =
-    [ regex "(um )?zirka|ungef(\x00e4)hr|etwa"
+    [ regex "(um )?zirka|ca\\.?|ungef(\x00e4)hr|etwa|gegen"
     , Predicate isATimeOfDay
     ]
   , prod = \tokens -> case tokens of
@@ -1029,12 +1077,23 @@ ruleUntilTimeofday :: Rule
 ruleUntilTimeofday = Rule
   { name = "until <time-of-day>"
   , pattern =
-    [ regex "vor|bis( zu[rm]?)?"
+    [ regex "vor|bis( zu[rm]?)?|sp(\x00e4)testens?"
     , dimension Time
     ]
   , prod = \tokens -> case tokens of
-      (_:Token Time td:_) ->
-        tt $ withDirection TTime.Before td
+      (_:Token Time td:_) -> tt $ withDirection TTime.Before td
+      _ -> Nothing
+  }
+
+ruleUntilTimeofdayPostfix :: Rule
+ruleUntilTimeofdayPostfix = Rule
+  { name = "<time-of-day> until"
+  , pattern =
+    [ dimension Time
+    , regex "sp(\x00e4)testens"
+    ]
+  , prod = \tokens -> case tokens of
+      (Token Time td:_:_) -> tt $ withDirection TTime.Before td
       _ -> Nothing
   }
 
@@ -1408,12 +1467,23 @@ ruleAfterTimeofday :: Rule
 ruleAfterTimeofday = Rule
   { name = "after <time-of-day>"
   , pattern =
-    [ regex "nach"
+    [ regex "nach|ab|fr(\x00fc)he?stens"
     , dimension Time
     ]
   , prod = \tokens -> case tokens of
-      (_:Token Time td:_) ->
-        tt $ withDirection TTime.After td
+      (_:Token Time td:_) -> tt $ withDirection TTime.After td
+      _ -> Nothing
+  }
+
+ruleAfterTimeofdayPostfix :: Rule
+ruleAfterTimeofdayPostfix = Rule
+  { name = "<time-of-day> after"
+  , pattern =
+    [ dimension Time
+    , regex "fr(\x00fc)he?stens"
+    ]
+  , prod = \tokens -> case tokens of
+      (Token Time td:_:_) -> tt $ withDirection TTime.After td
       _ -> Nothing
   }
 
@@ -1543,7 +1613,7 @@ ruleHhmm :: Rule
 ruleHhmm = Rule
   { name = "hh:mm"
   , pattern =
-    [ regex "((?:[01]?\\d)|(?:2[0-3]))[:.]([0-5]\\d)(?:uhr|h)?"
+    [ regex "((?:[01]?\\d)|(?:2[0-3]))[:.h]([0-5]\\d)(?:uhr|h)?"
     ]
   , prod = \tokens -> case tokens of
       (Token RegexMatch (GroupMatch (m1:m2:_)):_) -> do
@@ -1681,6 +1751,20 @@ ruleTimeofdayTimeofdayInterval = Rule
     [ Predicate $ liftM2 (&&) isATimeOfDay isNotLatent
     , regex "\\-|bis"
     , Predicate isATimeOfDay
+    ]
+  , prod = \tokens -> case tokens of
+      (Token Time td1:_:Token Time td2:_) ->
+        Token Time <$> interval TTime.Closed td1 td2
+      _ -> Nothing
+  }
+
+ruleTimeofdayTimeofdayInterval2 :: Rule
+ruleTimeofdayTimeofdayInterval2 = Rule
+  { name = "<time-of-day> - <time-of-day> (interval)"
+  , pattern =
+    [ Predicate isATimeOfDay
+    , regex "\\-|/|bis"
+    , Predicate $ liftM2 (&&) isATimeOfDay isNotLatent
     ]
   , prod = \tokens -> case tokens of
       (Token Time td1:_:Token Time td2:_) ->
@@ -1880,6 +1964,7 @@ rules =
   , ruleAfterLunch
   , ruleAfterNextTime
   , ruleAfterTimeofday
+  ,  ruleAfterTimeofdayPostfix
   , ruleAfterTomorrow
   , ruleAfterWork
   , ruleAfternoon
@@ -1892,6 +1977,7 @@ rules =
   , ruleChristmas
   , ruleChristmasEve
   , ruleDatetimeDatetimeInterval
+  , ruleDateDateInterval
   , ruleDayofmonthNonOrdinalNamedmonth
   , ruleDayofmonthNonOrdinalOfNamedmonth
   , ruleDayofmonthOrdinal
@@ -2002,10 +2088,12 @@ rules =
   , ruleTimeofdayOclock
   , ruleTimeofdaySharp
   , ruleTimeofdayTimeofdayInterval
+  , ruleTimeofdayTimeofdayInterval2
   , ruleToday
   , ruleTomorrow
   , ruleTonight
   , ruleUntilTimeofday
+  , ruleUntilTimeofdayPostfix
   , ruleValentinesDay
   , ruleWeekend
   , ruleWithinDuration

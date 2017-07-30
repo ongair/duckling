@@ -15,25 +15,27 @@ module Duckling.Numeral.Helpers
   , integer
   , multiply
   , divide
+  , notOkForAnyTime
   , numberBetween
   , numberWith
   , oneOf
   , parseDouble
   , parseInt
+  , parseInteger
   , withGrain
   , withMultipliable
-  , parseDecimal,
+  , parseDecimal
   ) where
 
-import qualified Data.Attoparsec.Text as Atto
 import Data.Maybe
 import Data.Text (Text)
-import qualified Data.Text as Text
 import Prelude
+import qualified Data.Attoparsec.Text as Atto
+import qualified Data.Text as Text
 
 import Duckling.Dimensions.Types
 import Duckling.Numeral.Types
-import Duckling.Types hiding (value)
+import Duckling.Types hiding (Entity(value))
 
 zeroT :: Text
 zeroT = Text.singleton '0'
@@ -45,7 +47,10 @@ comma :: Text
 comma = Text.singleton ','
 
 parseInt :: Text -> Maybe Int
-parseInt =
+parseInt = (fromIntegral <$>) . parseInteger
+
+parseInteger :: Text -> Maybe Integer
+parseInteger =
   either (const Nothing) Just . Atto.parseOnly (Atto.signed Atto.decimal)
 
 -- | Add leading 0 when leading . for double parsing to succeed
@@ -102,11 +107,17 @@ withGrain g (Token Numeral x@NumeralData{}) =
   Just . Token Numeral $ x {grain = Just g}
 withGrain _ _ = Nothing
 
+notOkForAnyTime :: Token -> Maybe Token
+notOkForAnyTime (Token Numeral x) =
+  Just . Token Numeral $ x {okForAnyTime = False}
+notOkForAnyTime _ = Nothing
+
 double :: Double -> Maybe Token
 double x = Just . Token Numeral $ NumeralData
   { value = x
   , grain = Nothing
   , multipliable = False
+  , okForAnyTime = True
   }
 
 integer :: Integer -> Maybe Token

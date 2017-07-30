@@ -268,6 +268,12 @@ allExamples = concat
              [ "zirka 15 uhr"
              , "zirka 3 uhr am nachmittag"
              , "um ungefähr 15 uhr"
+             , "gegen 15 uhr"
+             , "ca. 15h"
+             , "um ca 15h"
+             ]
+  , examples (datetime (2013, 4, 1, 18, 0, 0) Hour)
+             [ "01.04. gegen 18Uhr"
              ]
   , examples (datetime (2013, 2, 13, 17, 0, 0) Hour)
              [ "pünktlich um 17 uhr morgen"
@@ -300,7 +306,7 @@ allExamples = concat
              [ "viertel vor 12"
              , "11:45"
              ]
-  , examples (datetime (2013, 2, 12, 11, 45, 0) Second)
+  , examples (datetime (2013, 2, 12, 11, 45, 0) Minute)
              [ "15 minuten vor 12"
              ]
   , examples (datetime (2013, 2, 12, 20, 0, 0) Hour)
@@ -318,6 +324,12 @@ allExamples = concat
              ]
   , examples (datetime (2014, 7, 18, 19, 0, 0) Hour)
              [ "Fr, 18. Juli 2014 7 uhr abends"
+             ]
+  , examples (datetime (2014, 7, 18, 0, 0, 0) Day)
+             [ "Fr, 18. Juli 2014"
+             , "Freitag, 18.07.14"
+             , "Freitag, den 18.07.2014"
+             , "Freitag, der 18. Juli 14"
              ]
   , examples (datetime (2013, 2, 12, 4, 30, 1) Second)
              [ "in einer sekunde"
@@ -391,7 +403,7 @@ allExamples = concat
   , examples (datetime (2013, 2, 19, 4, 0, 0) Hour)
              [ "in 7 tagen"
              ]
-  , examples (datetime (2013, 12, 0, 0, 0, 0) Month)
+  , examples (datetime (2013, 12, 25, 0, 0, 0) Day)
              [ "ein jahr nach weihnachten"
              ]
   , examples (datetimeInterval ((2013, 6, 21, 0, 0, 0), (2013, 9, 24, 0, 0, 0)) Day)
@@ -581,12 +593,18 @@ allExamples = concat
   , examples (datetimeOpenInterval After (2013, 2, 12, 14, 0, 0) Hour)
              [ "nach 14 Uhr"
              , "nach 14h"
+             , "ab 14Uhr"
              , "nach 2 Uhr"
+             , "frühestens 14 Uhr"
+             , "14 Uhr frühstens"
              ]
   , examples (datetimeOpenInterval Before (2013, 2, 12, 11, 0, 0) Hour)
              [ "bis 11 uhr"
+             , "vor 11 uhr"
              , "bis 11h vormittags"
              , "bis 11 am vormittag"
+             , "spätestens 11 uhr"
+             , "11Uhr spätestens"
              ]
   , examples (datetimeInterval ((2013, 2, 12, 12, 0, 0), (2013, 2, 12, 19, 0, 0)) Hour)
              [ "am nachmittag"
@@ -612,7 +630,39 @@ allExamples = concat
   , examples (datetime (2013, 12, 10, 0, 0, 0) Day)
              [ "10.12."
              ]
-  , examples (datetimeInterval ((2013, 2, 12, 18, 30, 0), (2013, 2, 12, 19, 1, 0)) Minute)
+  , examples (datetimeInterval ((2013, 2, 12, 18, 30, 0), (2013, 2, 12, 19, 1, 0)) Minute)
              [ "18:30h - 19:00h"
+             , "18:30h/19:00h"
+             ]
+  , examples (datetimeInterval ((2013, 10, 14, 0, 0, 0), (2013, 10, 16, 0, 0, 0)) Day)
+             [ "14. - 15.10."
+             , "14 - 15.10."
+             , "14. - 15.10"
+             , "14 - 15.10"
+             , "14.10. - 15.10."
+             , "14. - 15.10.2013"
+             , "14.10. - 15.10.2013"
+             , "14./15.10."
+             ]
+  , examples (datetimeInterval ((2018, 10, 14, 0, 0, 0), (2018, 10, 16, 0, 0, 0)) Day)
+             [ "14. - 15.10.18"
+             , "14 - 15.10.18"
+             , "14.10. - 15.10.2018"
+             , "14./15.10.2018"
+             , "vom 14.10. - 15.10.2018"
+             , "14.10. bis 15.10.2018"
+             , "vom 14.10. auf den 15.10.2018"
+             , "vom 14.10. bis zum 15.10.2018"
+             ]
+  , examples (datetime (2013, 10, 10, 0, 0, 0) Day)
+             [ "am 10.10."
+             , "am 10.10"
+             , "10.10"
+             ]
+  , examples (datetime (2013, 2, 12, 10, 10, 0) Minute)
+             [ "um 10.10"
+             ]
+  , examples (datetime (2013, 2, 12, 17, 10, 0) Minute)
+             [ "17h10"
              ]
   ]
