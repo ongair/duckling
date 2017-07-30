@@ -49,6 +49,15 @@ ruleOtherPounds = Rule
       _ -> Nothing
   }
 
+ruleShilling :: Rule
+ruleShilling = Rule
+  { name = "shilling"
+  , pattern =
+    [ regex "shillings?"
+    ]
+  , prod = \_ -> Just . Token AmountOfMoney $ currencyOnly KES
+  }
+
 ruleRiyals :: Rule
 ruleRiyals = Rule
   { name = "riyals"
@@ -320,4 +329,5 @@ rules =
   , rulePrecision
   , ruleRinggit
   , ruleRiyals
+  , ruleShilling
   ]

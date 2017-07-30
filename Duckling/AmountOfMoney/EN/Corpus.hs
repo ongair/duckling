@@ -115,6 +115,14 @@ allExamples = concat
              [ "42 SAR"
              , "42 Saudiriyal"
              ]
+  , examples (simple KES 20)
+             [ "sh20"
+             , "sh.20"
+             , "shs20"
+             , "shs.20"
+             , "ksh20"
+             , "ksh.20"
+             ]
   , examples (simple MYR 42)
              [ "42 MYR"
              , "42 RM"
